@@ -1,0 +1,17 @@
+{
+  "name": "backened",
+  "version": "1.0.0",
+  "description": "The e-commerce backened",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "mongoose": "^9.1.4",
+    "nodemon": "^3.1.11"
+  }
+}
