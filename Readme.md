@@ -1,3 +1,16 @@
+
+
+
+# catalog?
+A catalog is an organized list or database of items, products, or data, often with descriptions and details, used for browsing, ordering, or finding information, common in retail (e.g., IKEA catalog), libraries (book catalog), and technology (data catalog), providing structure and simplifying discovery. It can be a physical book or a digital system, helping users find what they need efficiently. 
+
+# inventory?
+the products those are not sold yet and the raw material that is being used or will be used in falls under the inventory
+
+# SKU?
+Stock Keeping Unit is a unique product like for a jordan 1 the sku will be its unique product having  color and size as unique values and this tracks the quantity of the product i.e stock so it called stock keeping unit 
+
+
 Project strucuture
 /backend
 ├── /config # Database connection, Environment variables
@@ -102,3 +115,54 @@ const Filter_Group = {
 ```
 
 <!--  next step is to create an admin Product upload api -->
+
+# creating the admin api's for product
+
+1. /products --> Create a new Shoe model + initial SKUs (The "Super-Route").
+2. /products/:id ---> Update general info (Name, Description, Storytelling).
+3. /skus  --> Add a single new size or color to an existing shoe.
+4. /skus/:id  --> Update price or stock for a specific size (e.g., restock UK 10).
+5. /products/:id/colors  --> Add a new color gallery to the Product master.
+
+
+# create api for filter_group and category
+1. api/admin/filters  --> add the filter
+2. api/admin/categories  --> add the category
+
+
+
+
+# importance of version controll in the api 
+
+Skipping versioning (/v1) is a bit like building a house but sealing the doors so you can never move the furniture. It works perfectly on day one, but it makes future changes extremely painful.
+
+Here are three real-world scenarios that can happen in an e-commerce project if you don't use version control:
+
+1. The "Mobile App Crash" Scenario
+Imagine you have a website and a mobile app both using your API.
+
+Today: Your Product API returns an array of strings for images: images: ["1.jpg", "2.jpg"].
+
+Tomorrow: You want to upgrade to your "Color Group" logic, so you change the API to return objects: images: [{ url: "1.jpg", color: "Red" }].
+
+The Disaster: You push this change to the server. Your website works because you updated the code there. However, the mobile app (which users haven't updated yet) is still expecting strings. It tries to read a string, finds an object, and instantly crashes for thousands of users.
+
+With v1/v2: You keep the old logic on /v1 for the mobile app and put the new logic on /v2 for the website.
+
+2. The "Database Migration" Lockdown
+Suppose you decide to move your ProductSKU data into the Product document (complete denormalization) to make the site faster.
+
+Without v1: Every single service, frontend component, and third-party tool (like an inventory tracker) that hits your API will break the moment you change the JSON structure. You are "locked" into your old database design because you're too afraid to break the app.
+
+With v1: You can build a completely new database architecture and point /api/v2/ to it, while /api/v1/ continues to translate the new data into the old format for older parts of your system.
+
+3. Third-Party Integration Breaks
+As you grow, you might give a delivery partner or a marketing tool access to your /api/admin/products endpoint so they can sync your stock.
+
+The Conflict: You want to add a mandatory field like tax_category to your product upload.
+
+The Problem: Your delivery partner's script doesn't know about this new field. Since the field is now "Required" in your backend, their automated sync starts failing every night. You can't fix their code because you don't own it.
+
+# api/admin/products
+# api/admin/prducts/:id
+
