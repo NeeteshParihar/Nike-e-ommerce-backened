@@ -205,3 +205,5 @@ https://medium.com/@diptigyawali/efficient-file-uploads-in-mern-a-guide-to-multe
 # naming conventions for public_id of cloudinary
 [product-slug]_[color]_[view-angle]_[unique-suffix]
 ex:  air-jordan-1-retro_red-black_lateral-view_a8b2
+
+# each image is named from its originalFileName so admin has to make sure and keep it in the format
