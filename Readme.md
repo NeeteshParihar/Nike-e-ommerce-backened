@@ -166,3 +166,42 @@ The Problem: Your delivery partner's script doesn't know about this new field. S
 # api/admin/products
 # api/admin/prducts/:id
 
+
+# handling the image uploads to the server from the frontend and uploading the images to the cloudinary or third part service 
+
+# Handling the file uploads
+1. module --> multer
+
+# read article
+1. https://medium.com/@mohsinansari.dev/handling-file-uploads-and-file-validations-in-node-js-with-multer-a3716ec528a3 --> imp 
+2. https://expressjs.com/en/resources/middleware/multer.html
+3. https://www.freecodecamp.org/news/simplify-your-file-upload-process-in-express-js/
+
+
+# there are three ways to handle the file uploads to the cloudinary
+1. define storage engine to use the localStorage
+2. define storage engine to use the memory of the server on which server is running
+3. define storage engine to use the remote storage like cloudinary storage i.e we will stream the data directly to the cloudinary
+
+here are important articles in each section
+1. article about streaming:
+ https://dev.to/imani_brown_1a7d9bc29dd27/simplify-file-uploads-with-fluidjsmulter-cloudinary-in-expressjs-1i1m
+
+2. article about memory storage:
+https://medium.com/@joeeasy_/uploading-images-to-cloudinary-using-multer-and-expressjs-f0b9a4e14c54
+
+3. article about local storage: most comman cab be found easily 
+https://medium.com/@diptigyawali/efficient-file-uploads-in-mern-a-guide-to-multer-and-cloudinary-integration-b627eb551451
+
+
+# management --> will be implemented in future 
+1. managing the folders at cloudinary with the params options
+2. handling error
+3. handling file Size limit
+4. handling file types 
+
+
+
+# naming conventions for public_id of cloudinary
+[product-slug]_[color]_[view-angle]_[unique-suffix]
+ex:  air-jordan-1-retro_red-black_lateral-view_a8b2

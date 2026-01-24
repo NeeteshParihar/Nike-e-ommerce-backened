@@ -42,7 +42,6 @@ export const updateProductDetails = async( req, res) =>{
 }
 
 export const updateColorGallery = async(req, res)=>{
-
 }
 
 
