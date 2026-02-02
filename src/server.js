@@ -15,28 +15,6 @@ connectDB();
 // Middleware to parse JSON bodies into js Object
 app.use(express.json());
 
-
-app.post("/api/user/:id", async(req, res)=>{
-    try{
-
-        const id = req.params.id;
-        console.log(id);
-
-        res.status(200).json({
-            success: true,
-            id
-        })
-
-    }catch(err){
-        console.log(err);
-        res.status(500).json({
-            success: false,
-            message: "internal server error!"
-           
-        })
-    }
-})
-
 app.use("/api/admin", adminRouter);
 
 app.listen( PORT, ()=>{

@@ -116,6 +116,25 @@ const Filter_Group = {
 
 <!--  next step is to create an admin Product upload api -->
 
+
+# understand the common database design of e-commerce 
+https://dev.to/ezzdinatef/ecommerce-database-design-1ggc 
+
+# data base entities
+we have the following entities
+
+1. product
+2. product_sku
+3. category
+4. filter_group
+5. user
+6. addresses
+7. order
+8. whislist
+9. cart
+10. payment
+11. payment options 
+
 # creating the admin api's for product
 
 1. /products --> Create a new Shoe model + initial SKUs (The "Super-Route").
@@ -124,12 +143,9 @@ const Filter_Group = {
 4. /skus/:id  --> Update price or stock for a specific size (e.g., restock UK 10).
 5. /products/:id/colors  --> Add a new color gallery to the Product master.
 
-
 # create api for filter_group and category
 1. api/admin/filters  --> add the filter
 2. api/admin/categories  --> add the category
-
-
 
 
 # importance of version controll in the api 
@@ -207,3 +223,4 @@ https://medium.com/@diptigyawali/efficient-file-uploads-in-mern-a-guide-to-multe
 ex:  air-jordan-1-retro_red-black_lateral-view_a8b2
 
 # each image is named from its originalFileName so admin has to make sure and keep it in the format
+

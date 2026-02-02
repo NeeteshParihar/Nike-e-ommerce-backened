@@ -4,6 +4,8 @@ const productSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     brand: { type: String, default: 'Nike' },
     base_price: { type: Number, required: true },
+    currency: { type: String, default: 'INR' },
+    slug: { type: String, required: true, unique: true },   
     description: { type: String, required: true },
     details: [String],
     category_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
@@ -20,6 +22,7 @@ const productSchema = new mongoose.Schema({
         text: String
     }]
 }, { timestamps: true });
+
 
 const ProductModel = mongoose.models.Product ||  mongoose.model('Product', productSchema);
 export default ProductModel;

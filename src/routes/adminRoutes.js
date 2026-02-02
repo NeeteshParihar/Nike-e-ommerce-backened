@@ -1,9 +1,14 @@
 import express from 'express';
+import { preCheckColorGroup } from '../middleware/products/checkColorCode.js';
+
+
+
 const adminRouter = express.Router();
+
 
 // Importing Controllers
 import {createCategory, getCategoryById, getChildCategories} from '../controllers/admin/categoryController.js';
-import { createFullProduct, updateProductDetails, updateColorGallery } from '../controllers/admin/ProductsControllers.js';
+import { createProduct, updateProductDetails, updateColorGallery } from '../controllers/admin/ProductsControllers.js';
 import { addExtraSKU, updateSKU, buldUpdatePrice } from '../controllers/admin/skuControllers.js';
 
 // create the categories first 
@@ -12,16 +17,15 @@ adminRouter.get( "/category/:id", getCategoryById );
 adminRouter.get( "/categories/children/:id", getChildCategories );
 
 
-// --- Product Master Operations ---
-// Initial creation of a shoe and its variants (  SKU: stock keeping unit )
-adminRouter.post('/products', createFullProduct);
+// add the product 
+adminRouter.post('/product', createProduct);
 
 
 // Update name, description, or storytelling blocks
 adminRouter.patch('/products/:id', updateProductDetails);
 
 // Specifically for adding/updating images for a color group
-adminRouter.patch('/products/:id/gallery', updateColorGallery);
+adminRouter.patch('/products/gallery/:id', preCheckColorGroup, updateColorGallery);
 
 
 // --- Inventory & SKU Operations ---
