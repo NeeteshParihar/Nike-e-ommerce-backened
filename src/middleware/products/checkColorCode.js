@@ -7,6 +7,10 @@ export const preCheckColorGroup = async (req, res, next) => {
         const colorCode = req.headers['x-color-code'];
         const category = req.headers['x-category'];
 
+        console.log(colorName);
+        console.log(colorCode);
+        console.log(category);
+
 
 
         //  these are values in case we want to add this product as default but another default already exists
@@ -23,7 +27,7 @@ export const preCheckColorGroup = async (req, res, next) => {
         const product = await ProductModel.findById(productId);
         if (!product) return res.status(404).json({ success: false, error: "Product not found" });
 
-        const nameExists = product.color_styles.some(color => color.color_name === colorName);
+        const nameExists = product.colorStyles.some(color => color.colorName === colorName);
 
         if (nameExists) {
             return res.status(400).json({ success: false, error: `Color ${colorName} already exists.` });
@@ -33,7 +37,7 @@ export const preCheckColorGroup = async (req, res, next) => {
         if (isNewDefault) {
 
             // check if there is any color which is default
-            const currentDefault = product.color_styles.find(color => color.is_default);
+            const currentDefault = product.colorStyles.find(color => color.isDefault);
 
             // there is one case which we don't care --> currentDefault not exists and overWrite is false in this case we can make it default
 
@@ -48,10 +52,11 @@ export const preCheckColorGroup = async (req, res, next) => {
            
         }
 
-        req.color_name = colorName;
-        req.color_code = colorCode;
-        req.is_default = isNewDefault;
+        req.colorName = colorName;
+        req.colorCode = colorCode;
+        req.isDefault = isNewDefault;
         req.category = category;
+
 
         next();
         

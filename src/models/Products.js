@@ -12,12 +12,12 @@ const colorStyleSchema = new mongoose.Schema({
         }],
         default: []
     },
-    is_default: { type: Boolean, default: false }
+    isDefault: { type: Boolean, default: false }
 });
 
 // defined the story telling schema
 const storytellingSchema = new mongoose.Schema({
-    block_type: {
+    blockType: {
         type: String,
         enum: ['video', 'image_text'],
         required: true
@@ -30,16 +30,16 @@ const storytellingSchema = new mongoose.Schema({
 const productSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     brand: { type: String, default: 'Nike' },
-    base_price: { type: Number, required: true },
+    basePrice: { type: Number, required: true },
     currency: { type: String, default: 'INR' },
     slug: { type: String, required: true, unique: true },
     description: { type: String, required: true },
     details: [String],
-    category_ids: {
+    categoryIds: {
         type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Category' }],
         default: []
     },
-    color_styles: {
+    colorStyles: {
         type: [colorStyleSchema],
         default: []
     },

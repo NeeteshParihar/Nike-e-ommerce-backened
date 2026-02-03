@@ -2,26 +2,26 @@ import mongoose from "mongoose";
 import ProductModel from "../../models/Products.js";
 import ProductSKUModel from "../../models/ProductSku.js";
 import { imageUploader } from "../../config/cloudinaryConfig.js";
-import {generateSlug} from "../../uitls/slugGenerator.js"
+import { generateSlug } from "../../uitls/slugGenerator.js"
 
 
 export const createProduct = async (req, res) => {
     try {
 
         // make sure our data validation layer validate and sanitize this data
-        const {name, brand, base_price, currency,  description, details, category_ids, color_styles, storytelling} = req.body ;        
+        const { name, brand, basePrice, currency, description, details, categoryIds, colorStyles, storytelling } = req.body;
 
         const slug = generateSlug(name);
 
         const newProduct = await ProductModel.create({
-           name, brand, base_price, currency, slug, description, details, category_ids, color_styles, storytelling 
+            name, brand, basePrice, currency, slug, description, details, categoryIds, colorStyles, storytelling
         })
 
         return res.status(201).json({
             success: true,
             data: newProduct
         });
-        
+
     } catch (err) {
         res.status(400).json({
             success: false,
@@ -31,7 +31,7 @@ export const createProduct = async (req, res) => {
     }
 };
 
-export const updateProductDetails = async (req, res) =>{
+export const updateProductDetails = async (req, res) => {
 
 }
 
@@ -41,9 +41,14 @@ export const updateColorGallery = async (req, res) => {
 
     try {
 
-        const colorName = req.color_name;
-        const colorCode = req.color_code;
+        const colorName = req.colorName;
+        const colorCode = req.colorCode;
         const productId = req.params.id;
+
+        console.log("printing the color values....");
+        console.log(colorName);
+        console.log(colorCode);
+        console.log(productId);
 
 
         if (!colorName || !colorCode) return res.json({
@@ -60,26 +65,25 @@ export const updateColorGallery = async (req, res) => {
             if (!req.files.length) return res.status(400).json({
                 success: false, error: "No files were uploaded"
             });
-            
+
 
             const filePaths = req.files.map(file => ({
-                url: file.path,
-                public_id: file.filename
+                imgUrl: file.path,
+                publicId: file.filename
             }));
 
             // add the files to the colorName in the product 
 
-          
 
             const newColorStyle = {
-                color_name: colorName,
-                hex_code: colorCode,
+                colorName: colorName,
+                hexCode: colorCode,
                 gallery: filePaths, // The array of URLs from Cloudinary
-                is_default: req.is_default || false
+                isDefault: req.isDefault || false
             };
 
             //  to make this color as default we have to mark others as defaut: false
-            if (req.is_default) {
+            if (req.isDefault) {
                 await ProductModel.updateOne(
                     { _id: productId },
                     { $set: { "color_styles.$[].is_default": false } } // Set ALL array items to false
@@ -89,7 +93,7 @@ export const updateColorGallery = async (req, res) => {
 
             const updatedProduct = await ProductModel.findByIdAndUpdate(
                 productId,
-                { $push: { color_styles: newColorStyle } },
+                { $push: { colorStyles: newColorStyle } },
                 { new: true } // Returns the modified document rather than the original
             );
 

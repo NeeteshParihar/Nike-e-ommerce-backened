@@ -21,6 +21,7 @@ adminRouter.get( "/categories/children/:id", getChildCategories );
 adminRouter.post('/product', createProduct);
 
 
+
 // Update name, description, or storytelling blocks
 adminRouter.patch('/products/:id', updateProductDetails);
 
