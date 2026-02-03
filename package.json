@@ -14,9 +14,9 @@
     "@fluidjs/multer-cloudinary": "^1.0.4",
     "cloudinary": "^2.9.0",
     "dotenv": "^17.2.3",
-    "express": "^5.2.1",
+    "express": "^4.19.2",
     "mongoose": "^9.1.4",
-    "multer": "^2.0.2",
+    "multer": "^1.4.5-lts.1",
     "nodemon": "^3.1.11"
   }
 }

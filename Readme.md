@@ -191,7 +191,7 @@ The Problem: Your delivery partner's script doesn't know about this new field. S
 # read article
 1. https://medium.com/@mohsinansari.dev/handling-file-uploads-and-file-validations-in-node-js-with-multer-a3716ec528a3 --> imp 
 2. https://expressjs.com/en/resources/middleware/multer.html
-3. https://www.freecodecamp.org/news/simplify-your-file-upload-process-in-express-js/
+3. https://www.freecodecamp.org/news/simplify-your-file-upload-process-in-express-js/ 
 
 
 # there are three ways to handle the file uploads to the cloudinary
@@ -209,6 +209,8 @@ https://medium.com/@joeeasy_/uploading-images-to-cloudinary-using-multer-and-exp
 3. article about local storage: most comman cab be found easily 
 https://medium.com/@diptigyawali/efficient-file-uploads-in-mern-a-guide-to-multer-and-cloudinary-integration-b627eb551451
 
+4. multer-cloudinary-storage
+https://www.npmjs.com/package/multer-storage-cloudinary 
 
 # management --> will be implemented in future 
 1. managing the folders at cloudinary with the params options

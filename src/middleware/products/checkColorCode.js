@@ -5,8 +5,11 @@ export const preCheckColorGroup = async (req, res, next) => {
 
         const colorName = req.headers['x-color-name'];
         const colorCode = req.headers['x-color-code'];
+
+        //  these are values in case we want to add this product as default but another default already exists
         const overwriteDefault = req.headers['x-overwrite-default'] === 'true'; // Expecting "true" string
         const isNewDefault = req.headers['x-is-default'] === 'true';
+
         const productId = req.params.id;
 
         if (!colorName || !colorCode) {
@@ -23,7 +26,7 @@ export const preCheckColorGroup = async (req, res, next) => {
             return res.status(400).json({ success: false, error: `Color ${colorName} already exists.` });
         }
 
-
+        //  as this colorName does'nt exists we can add add it but if we wanna make this as default then we have to do this check
         if (isNewDefault) {
 
             // check if there is any color which is default
@@ -39,7 +42,6 @@ export const preCheckColorGroup = async (req, res, next) => {
                     actionRequired: "Set 'x-overwrite-default' header to true to confirm change."
                 });
             }
-
            
         }
 

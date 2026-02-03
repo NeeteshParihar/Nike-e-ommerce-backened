@@ -13,34 +13,27 @@ cloudinary.config({
 
 // configure the storage engine which uses cloudinary storage
 
-
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: async (req, file) => {
-        // 1. Get the original name and strip the extension (e.g., "Air Max Side.jpg" -> "Air Max Side")
+        // Logic outside the return object
         const originalName = file.originalname.split('.').slice(0, -1).join('.');
-
-        // 2. Clean it up: lowercase and replace spaces/specials with hyphens
         const seoFriendlyName = originalName
             .toLowerCase()
-            .replace(/\s+/g, '-')           // Spaces to hyphens
-            .replace(/[^a-z0-9-]/g, '');    // Remove non-alphanumeric except hyphens
-
-        // 3. Optional: Add a short timestamp to prevent overwriting if two admins upload "front.jpg"
+            .replace(/\s+/g, '-')
+            .replace(/[^a-z0-9-]/g, '');
+        
         const finalId = `${seoFriendlyName}-${Date.now().toString().slice(-4)}`;
+        const folderPath = `nike/products/${req.params.category || 'uncategorized'}`;
 
+        // Return a plain object with strings
         return {
-            folder: `nike/products/${req.params.category || 'uncategorized'}`,
+            folder: folderPath,
             public_id: finalId,
-            allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-            transformation: [
-                { width: 2000, quality: "auto", fetch_format: "auto" },
-                // Optimize but keep high-res
-                { strip_metadata: true } // Remove GPS/camera data for privacy/size
-            ]
+            allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'avif'],
+            transformation: [{ width: 2000, quality: "auto", fetch_format: "auto" }]
         };
     },
 });
-
 
 export const upload = multer({ storage: storage });

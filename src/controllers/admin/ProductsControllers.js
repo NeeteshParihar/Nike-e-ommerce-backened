@@ -2,13 +2,16 @@ import mongoose from "mongoose";
 import ProductModel from "../../models/Products.js";
 import ProductSKUModel from "../../models/ProductSku.js";
 import { upload } from "../../config/cloudinaryConfig.js";
+import {generateSlug} from "../../uitls/slugGenerator.js"
 
 
 export const createProduct = async (req, res) => {
     try {
 
         // make sure our data validation layer validate and sanitize this data
-        const {name, brand, base_price, currency, slug, description, details, category_ids, color_styles, storytelling} = req.body ;
+        const {name, brand, base_price, currency,  description, details, category_ids, color_styles, storytelling} = req.body ;        
+
+        const slug = generateSlug(name);
 
         const newProduct = await ProductModel.create({
            name, brand, base_price, currency, slug, description, details, category_ids, color_styles, storytelling 
@@ -28,9 +31,8 @@ export const createProduct = async (req, res) => {
     }
 };
 
-
 export const updateProductDetails = async (req, res) =>{
-    
+
 }
 
 
@@ -38,7 +40,6 @@ export const updateColorGallery = async (req, res) => {
 
 
     try {
-
 
         const colorName = req.color_name;
         const colorCode = req.color_code;
@@ -58,9 +59,13 @@ export const updateColorGallery = async (req, res) => {
 
             if (!req.files.length) return res.status(400).json({
                 success: false, error: "No files were uploaded"
-            })
+            });
+            
 
-            const filePaths = req.files.map(file => file.path);
+            const filePaths = req.files.map(file => ({
+                url: file.path,
+                public_id: file.filename
+            }));
 
             // add the files to the colorName in the product 
 
