@@ -5,6 +5,9 @@ export const preCheckColorGroup = async (req, res, next) => {
 
         const colorName = req.headers['x-color-name'];
         const colorCode = req.headers['x-color-code'];
+        const category = req.headers['x-category'];
+
+
 
         //  these are values in case we want to add this product as default but another default already exists
         const overwriteDefault = req.headers['x-overwrite-default'] === 'true'; // Expecting "true" string
@@ -48,6 +51,7 @@ export const preCheckColorGroup = async (req, res, next) => {
         req.color_name = colorName;
         req.color_code = colorCode;
         req.is_default = isNewDefault;
+        req.category = category;
 
         next();
         

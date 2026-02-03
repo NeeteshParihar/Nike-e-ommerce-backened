@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import ProductModel from "../../models/Products.js";
 import ProductSKUModel from "../../models/ProductSku.js";
-import { upload } from "../../config/cloudinaryConfig.js";
+import { imageUploader } from "../../config/cloudinaryConfig.js";
 import {generateSlug} from "../../uitls/slugGenerator.js"
 
 
@@ -48,9 +48,9 @@ export const updateColorGallery = async (req, res) => {
 
         if (!colorName || !colorCode) return res.json({
             success: false, message: "Please send the color group and color code in the headers"
-        })
+        });
 
-        upload.array("gallery", 10)(req, res, async (err) => {
+        imageUploader.array("gallery", 10)(req, res, async (err) => {
 
 
             if (err) {
@@ -68,6 +68,8 @@ export const updateColorGallery = async (req, res) => {
             }));
 
             // add the files to the colorName in the product 
+
+          
 
             const newColorStyle = {
                 color_name: colorName,
