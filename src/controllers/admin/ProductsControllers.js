@@ -1,8 +1,13 @@
 import mongoose from "mongoose";
+
+// import the controllers
 import ProductModel from "../../models/Products.js";
 import ProductSKUModel from "../../models/ProductSku.js";
 import { imageUploader } from "../../config/cloudinaryConfig.js";
 import { generateSlug } from "../../uitls/slugGenerator.js"
+
+// import the querBuilders 
+import { queryForUpdatingBasicDetails } from "../../uitls/ProductQueryBuilders.js";
 
 
 export const createProduct = async (req, res) => {
@@ -14,7 +19,7 @@ export const createProduct = async (req, res) => {
         const slug = generateSlug(name);
 
         const newProduct = await ProductModel.create({
-            name, brand, basePrice,  slug, description, details, categoryIds, colorStyles, storytelling
+            name, brand, basePrice, slug, description, details, categoryIds, colorStyles, storytelling
         })
 
         return res.status(201).json({
@@ -34,27 +39,32 @@ export const createProduct = async (req, res) => {
 //  here product details those are updatable are : baseprice, desc, details
 export const updateProductDetails = async (req, res) => {
 
-    try{
+    try {
 
         // <--- make sure to pass this data through data validation and sanitization layer before saving ----->
 
         const productId = req.params.id;
         const { basePrice, description, details } = req.body;
 
+        const queryParameters = queryForUpdatingBasicDetails({ basePrice, description, details });
+
         const updatedProduct = await ProductModel.findByIdAndUpdate(
             productId,
-            { basePrice, description, details },
-            { new: true }
-        );
+            queryParameters,    
+            // { new: true }       we want to show the prevoious data too  
+        ).select("-colorStyles -storytelling");
 
         res.status(200).json({
             success: true,
             message: "Product details updated successfully",
-            data: updatedProduct
+            data: {
+                oldProduct: updatedProduct,
+                updatedDetails: queryParameters
+            }
         });
 
-    }catch(err){
-        
+    } catch (err) {
+
         return res.status(500).json({
             success: false,
             error: err.message,
