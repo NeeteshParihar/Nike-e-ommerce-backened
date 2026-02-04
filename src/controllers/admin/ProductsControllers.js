@@ -9,12 +9,12 @@ export const createProduct = async (req, res) => {
     try {
 
         // make sure our data validation layer validate and sanitize this data
-        const { name, brand, basePrice, currency, description, details, categoryIds, colorStyles, storytelling } = req.body;
+        const { name, brand, basePrice, description, details, categoryIds, colorStyles, storytelling } = req.body;
 
         const slug = generateSlug(name);
 
         const newProduct = await ProductModel.create({
-            name, brand, basePrice, currency, slug, description, details, categoryIds, colorStyles, storytelling
+            name, brand, basePrice,  slug, description, details, categoryIds, colorStyles, storytelling
         })
 
         return res.status(201).json({
@@ -31,12 +31,40 @@ export const createProduct = async (req, res) => {
     }
 };
 
+//  here product details those are updatable are : baseprice, desc, details
 export const updateProductDetails = async (req, res) => {
 
+    try{
+
+        // <--- make sure to pass this data through data validation and sanitization layer before saving ----->
+
+        const productId = req.params.id;
+        const { basePrice, description, details } = req.body;
+
+        const updatedProduct = await ProductModel.findByIdAndUpdate(
+            productId,
+            { basePrice, description, details },
+            { new: true }
+        );
+
+        res.status(200).json({
+            success: true,
+            message: "Product details updated successfully",
+            data: updatedProduct
+        });
+
+    }catch(err){
+        
+        return res.status(500).json({
+            success: false,
+            error: err.message,
+            errorIn: "controllers/admin/ProductsControllers/updateProductDetails"
+        });
+    }
 }
 
 
-export const updateColorGallery = async (req, res) => {
+export const addColorToGallery = async (req, res) => {
 
 
     try {
@@ -44,12 +72,6 @@ export const updateColorGallery = async (req, res) => {
         const colorName = req.colorName;
         const colorCode = req.colorCode;
         const productId = req.params.id;
-
-        console.log("printing the color values....");
-        console.log(colorName);
-        console.log(colorCode);
-        console.log(productId);
-
 
         if (!colorName || !colorCode) return res.json({
             success: false, message: "Please send the color group and color code in the headers"
