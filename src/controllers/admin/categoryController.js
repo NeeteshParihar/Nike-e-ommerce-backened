@@ -13,29 +13,26 @@ export const createCategory = async (req, res) => {
 };
 
 export const getCategoryById = async (req, res) => {
-    try{
+    try {
 
         const category = await CategoryModel.findById(req.params.id);
-        if(!category){
+        if (!category) {
             return res.status(404).json({ success: false, message: "Category not found" });
         }
         res.status(200).json({ success: true, data: category });
 
-    }catch(err){
+    } catch (err) {
         res.status(500).json({ success: false, error: err.message, errorIn: "controllers/admin/categoryController" });
     }
 }
 
 export const getChildCategories = async (req, res) => {
-    try{
+    try {
         const categories = await CategoryModel.find({ parent_category_id: req.params.id });
         res.status(200).json({ success: true, data: categories });
-    }catch(err){
+    } catch (err) {
         res.status(500).json({ success: false, error: err.message, errorIn: "controllers/admin/categoryController" })
     }
 }
-
-
-
 
 

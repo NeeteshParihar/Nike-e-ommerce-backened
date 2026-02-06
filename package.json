@@ -18,5 +18,8 @@
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemon": "^3.1.11"
+  },
+  "devDependencies": {
+    "axios": "^1.13.4"
   }
 }

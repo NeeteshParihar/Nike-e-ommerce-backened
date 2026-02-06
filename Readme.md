@@ -226,3 +226,27 @@ ex:  air-jordan-1-retro_red-black_lateral-view_a8b2
 
 # each image is named from its originalFileName so admin has to make sure and keep it in the format
 
+
+
+# Optimistic concurrency control: it is a technique by which we can ensure that we only modify the newest version of the document or product
+
+ex: 
+1. admin - A fetched product with __v: 0 --> version 0
+2. admin - B fetched product with __v: 0 --> version 0
+3. admin - A updated the price so  version changed to __v: 1
+4. admin - B tries to change the product but the version so update is not done because of this B can refresh and see what new changes has done to the product
+
+so whenever we updates the document we tells mongo only update if i have the newest version
+
+
+# Deletion in E-commerce
+1. if i deletes the product completly then we have to delete its sku, gallery images and other related data or media there is chances that some of the operation fail but we can handle it
+2. the product can be in many users cart, whislist and the orders and history deleting the product completely would break down Experience and logic
+
+so we comes accorss a concept that we never deletes a product ones it created rather than we controlls its visibilty by the status
+
+<---- status ------->
+1. Draft: Work in progress , only visible to admins , it signifies that the product is in the stage of uploading
+2. Active: The product is visible to both client and admin 
+3. Archived: Hidden from search and category listing pages, but the URL still works, best when the product is discontinued
+4. Deleted: Completely hidden from both the frontend and the main admin product list (unless the admin specifically filters for "Deleted").

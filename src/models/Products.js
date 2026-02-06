@@ -43,6 +43,12 @@ const productSchema = new mongoose.Schema({
         type: [colorStyleSchema],
         default: []
     },
+    // read the readme about these states
+    status: {
+        type: String,
+        enum: ['active', 'draft', 'archived', 'deleted'],
+        default: 'draft' 
+    },
     storytelling: [storytellingSchema],
 }, { timestamps: true });
 
