@@ -4,7 +4,8 @@ import {
     updateProductDetails, 
     addColorToGallery, 
     updateProductCategories,
-    deleteProduct
+    deleteProduct,
+    removeColorStyle    
 } from "../../controllers/admin/ProductsControllers.js";
 
 import { preCheckColorGroup } from "../../middleware/products/checkColorCode.js";
@@ -18,9 +19,13 @@ productRouter.delete("/:id", deleteProduct);
 // /api/admin/product/:id
 productRouter.patch("/:id", updateProductDetails); 
 
-// /api/admin/product/gallery/:id  --> deticated route for handling the addition of colorGallery
+// /api/admin/product/gallery/:id  --> deticated route for handling the addition of colorGallery 
 productRouter.post("/gallery/:id",preCheckColorGroup, addColorToGallery);
 
-productRouter.patch("/:id/categories", updateProductCategories)
+// api/admin/product/:id/categories --> updating the product categories
+productRouter.patch("/:id/categories", updateProductCategories);
+
+productRouter.delete("/:id/color/:colorId", removeColorStyle );
+
 
 export default productRouter;

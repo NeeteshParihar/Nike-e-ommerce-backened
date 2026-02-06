@@ -151,10 +151,10 @@ export const addColorToGallery = async (req, res) => {
             }
 
             return res.status(201).json({
-                    success: false,
-                    message: "Images uploaded successfully",
-                    data: updatedProduct
-                });
+                success: false,
+                message: "Images uploaded successfully",
+                data: updatedProduct
+            });
 
         } catch (err) {
 
@@ -171,59 +171,59 @@ export const addColorToGallery = async (req, res) => {
 
 
 export const updateProductCategories = async (req, res) => {
-
     try {
-
         const productId = req.params.id;
-        const { categoryId, action, version } = req.body;
+        const { categoryId, action, version } = req.body; // action: 'add' | 'remove'
 
-        // check the category
-        const [isCategoryExist, isSubCategoryExist] = await Promise.all([
-            CategoryModel.exists({ _id: categoryId }),
-            CategoryModel.exists({ parent_category_id: categoryId })
-        ]);
-
-        if (isSubCategoryExist) {
-            return res.status(400).json({
-                success: false, message: "Invalid category heirarchy, its must be leaf category"
-            })
+        if (version === undefined || Number.isInteger(version) === false) {
+            return res.status(400).json({ success: false, message: "Version is required and must be an integer" });
         }
 
-        if (!isCategoryExist) {
-            return res.status(404).json({
-                success: false, message: "Category not found"
+        let updateQuery = {};
+
+        if (action === 'add') {
+
+            const [isCategoryExists, isSubCategoryExist] = await Promise.all([
+                CategoryModel.exists({ _id: categoryId }),
+                CategoryModel.exists({ parent_category_id: categoryId })
+            ]);
+
+            if (!isCategoryExists || isSubCategoryExist) return res.status(400).json({ success: false, message: "Invalid category, No changes done", categoryId });
+
+            updateQuery = { $addToSet: { categoryIds: categoryId } };
+
+        } else if (action === 'remove') {
+            updateQuery = { $pull: { categoryIds: categoryId } };
+        } else {
+            return res.status(400).json({ success: false, message: "Invalid action" });
+        }
+
+        const updatedProduct = await ProductModel.findOneAndUpdate(
+            { _id: productId, __v: version },
+            {
+                ...updateQuery,
+                $inc: { __v: 1 }
+            },
+            { new: true }
+        ).select("-colorStyles -storytelling");
+
+        if (!updatedProduct) {
+            return res.status(409).json({
+                success: false,
+                message: "Conflict: Product version mismatch or product not found, try again"
             });
         }
 
-        const query = { _id: productId };
-
-        if (action.toLowerCase() === "remove") {
-            // Rule: Only remove if there's more than 1 category
-            query["categoryIds.1"] = { $exists: true };
-        }
-
-        const update = action === 'add'
-            ? { $addToSet: { categoryIds: categoryId } }
-            : { $pull: { categoryIds: categoryId } };
-
-        const updatedProduct = await ProductModel.findOneAndUpdate(query, update, { new: true });
-
-
-        if (!updatedProduct) {
-            // If it fails, we check WHY
-            const stillExists = await ProductModel.exists({ _id: productId });
-            if (!stillExists) return res.status(404).json({ message: "Product was deleted by another admin" });
-
-            return res.status(400).json({ message: "Action blocked by business rules (e.g., must have at least 1 category)" });
-        }
-
-        return res.status(200).json({ success: true, data: updatedProduct });
+        res.status(200).json({ success: true, data: updatedProduct });
 
     } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
+        res.status(500).json({
+            success: false,
+            error: err.message,
+            errorIn: "controllers/admin/ProductsControllers/updateProductCategories"
+        });
     }
-
-};
+}
 
 
 export const deleteProduct = async (req, res) => {
@@ -247,18 +247,18 @@ export const deleteProduct = async (req, res) => {
             }
         ]);
 
-        if(!productData) return res.status(404).json({
+        if (!productData) return res.status(404).json({
             success: false, message: "Product not found"
         });
-        
+
         // delete the images
         const deletePromises = productData.publicIds.map(img => cloudinary.uploader.destroy(img));
         await Promise.all(deletePromises);
-        
+
         // delete the sku's
 
         // delete the products 
-        const deletedProduct = await ProductModel.deleteOne({ _id: productId });    
+        const deletedProduct = await ProductModel.deleteOne({ _id: productId });
 
         // 
         return res.status(200).json({
@@ -274,3 +274,131 @@ export const deleteProduct = async (req, res) => {
         });
     }
 }
+
+
+// <---------- here comes the controller for the Removing the color and its images ------->
+export const removeColorStyle = async (req, res) => {
+    try {
+        const productId = req.params.id;
+        const colorId = req.params.colorId;
+        const { version } = req.body; // colorId is the id of that color in the gallery of product that we want to delete
+
+        if (version === undefined || Number.isInteger(version) === false) {
+            return res.status(400).json({ success: false, message: "Version is required and must be an integer" });
+        }
+
+        
+        const product = await ProductModel.findOne({ _id: productId, "colorStyles._id": colorId });
+        if (!product) return res.status(404).json({ success: false, message: "Product or Color Style not found" });
+
+        const colorStyle = product.colorStyles.find(style => style._id.toString() === colorId );
+        const publicIds = colorStyle.gallery.map(img => img.publicId);
+
+        const updatedProduct = await ProductModel.findOneAndUpdate(
+            { _id: productId, __v: version },
+            {
+                $pull: { colorStyles: { _id: colorId } },
+                $inc: { __v: 1 }
+            },
+            { new: true }
+        );
+
+        if (!updatedProduct) return res.status(409).json({ success: false, message: "Version Conflict, please refresh the page and try again" });
+
+        // Cleanup Cloudinary
+        if (publicIds.length > 0) {
+            await Promise.all(publicIds.map(pid => cloudinary.uploader.destroy(pid)));
+        }
+
+        res.status(200).json({ success: true, data: updatedProduct });
+        
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+// <---------------- here comes the logic to to add the images to a color color ------------>
+export const addImagesToExistingColor = async (req, res) => {
+    imageUploader.array("gallery", 10)(req, res, async (err) => {
+        if (err) return res.status(500).json({ success: false, error: err.message });
+
+        const { colorName, version } = req.body;
+        const filePaths = req.files.map(file => ({ imgUrl: file.path, publicId: file.filename }));
+
+        try {
+            const updatedProduct = await ProductModel.findOneAndUpdate(
+                {
+                    _id: req.params.id,
+                    __v: version,
+                    "colorStyles.colorName": colorName
+                },
+                {
+                    $push: { "colorStyles.$.gallery": { $each: filePaths } },
+                    $inc: { __v: 1 }
+                },
+                { new: true }
+            );
+
+            if (!updatedProduct) {
+                await Promise.all(filePaths.map(img => cloudinary.uploader.destroy(img.publicId)));
+                return res.status(409).json({ success: false, message: "Conflict: Version mismatch or color not found" });
+            }
+
+            res.status(200).json({ success: true, data: updatedProduct });
+        } catch (error) {
+            await Promise.all(filePaths.map(img => cloudinary.uploader.destroy(img.publicId)));
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+};
+
+// <--------------- here comes the logic to remove the images from the color --------------->
+export const removeImageFromColor = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { colorName, publicId, version } = req.body;
+
+        if (version === undefined) return res.status(400).json({ success: false, message: "Version is required" });
+
+        // 1. Find the image details first to ensure it exists in this specific color group
+        const product = await ProductModel.findOne({
+            _id: id,
+            "colorStyles.colorName": colorName,
+            "colorStyles.gallery.publicId": publicId
+        });
+
+        if (!product) {
+            return res.status(404).json({ success: false, message: "Image not found in specified color style" });
+        }
+
+        // 2. Update DB
+        const updatedProduct = await ProductModel.findOneAndUpdate(
+            {
+                _id: id,
+                __v: version,
+                "colorStyles.colorName": colorName
+            },
+            {
+                $pull: { "colorStyles.$.gallery": { publicId: publicId } },
+                $inc: { __v: 1 }
+            },
+            { new: true }
+        );
+
+        if (!updatedProduct) {
+            return res.status(409).json({ success: false, message: "Version mismatch" });
+        }
+
+        // 3. Delete from Cloudinary
+        await cloudinary.uploader.destroy(publicId);
+
+        res.status(200).json({
+            success: true,
+            message: "Image removed successfully",
+            data: updatedProduct
+        });
+
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+};
