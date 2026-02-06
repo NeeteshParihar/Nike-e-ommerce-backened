@@ -47,9 +47,10 @@ export const updateProductDetails = async (req, res) => {
         // <--- make sure to pass this data through data validation and sanitization layer before saving ----->
 
         const productId = req.params.id;
-        const { basePrice, description, details, version, status } = req.body;
+        const { basePrice, description, details, status } = req.body;
+        const version = Number.parseInt(req.body?.version);
 
-        if (!Number.isInteger(version)) return res.status(400).json({
+        if (Number.isNaN(version)) return res.status(400).json({
             success: false,
             message: "Updates are not possible without version number"
         });
@@ -173,9 +174,10 @@ export const addColorToGallery = async (req, res) => {
 export const updateProductCategories = async (req, res) => {
     try {
         const productId = req.params.id;
-        const { categoryId, action, version } = req.body; // action: 'add' | 'remove'
+        const { categoryId, action } = req.body; // action: 'add' | 'remove'
+        const version = Number.parseInt(req.body?.version);
 
-        if (version === undefined || Number.isInteger(version) === false) {
+        if (Number.isNaN(version)) {
             return res.status(400).json({ success: false, message: "Version is required and must be an integer" });
         }
 
@@ -231,36 +233,27 @@ export const deleteProduct = async (req, res) => {
     try {
 
         const productId = req.params.id;
+        const version = Number.parseInt(req.body?.version);
 
-        const [productData] = await ProductModel.aggregate([
-            { $match: { _id: new mongoose.Types.ObjectId(productId) } },
-            {
-                $project: {
-                    publicIds: {
-                        $reduce: {
-                            input: "$colorStyles",
-                            initialValue: [],
-                            in: { $concatArrays: ["$$value", "$$this.gallery.publicId"] }
-                        }
-                    }
-                }
-            }
-        ]);
-
-        if (!productData) return res.status(404).json({
-            success: false, message: "Product not found"
+        if (Number.isNaN(version)) return res.status(400).json({
+            success: false,
+            message: "Deletion requires a version number for concurrency control"
         });
 
-        // delete the images
-        const deletePromises = productData.publicIds.map(img => cloudinary.uploader.destroy(img));
-        await Promise.all(deletePromises);
+        const deletedProduct = await ProductModel.findOneAndUpdate(
+            { _id: productId, __v: version },
+            {
+                $set: { status: 'deleted' },
+                $inc: { __v: 1 }
+            },
+            { new: true }
+        );
 
-        // delete the sku's
+        if (!deletedProduct) return res.status(409).json({
+            success: false,
+            message: "Conflict: Product version mismatch or product not found"
+        });
 
-        // delete the products 
-        const deletedProduct = await ProductModel.deleteOne({ _id: productId });
-
-        // 
         return res.status(200).json({
             success: true,
             data: deletedProduct
@@ -269,30 +262,38 @@ export const deleteProduct = async (req, res) => {
     } catch (err) {
 
         return res.status(500).json({
-            success: true,
-            data: err.message
+            success: false,
+            error: err.message
         });
     }
 }
 
-
 // <---------- here comes the controller for the Removing the color and its images ------->
 export const removeColorStyle = async (req, res) => {
     try {
-        const productId = req.params.id;
+
+        const productId = req.params.id;        
         const colorId = req.params.colorId;
-        const { version } = req.body; // colorId is the id of that color in the gallery of product that we want to delete
+        const version = Number.parseInt(req.body?.version);
+        const colorName = req.body.colorName;
+       
 
-        if (version === undefined || Number.isInteger(version) === false) {
-            return res.status(400).json({ success: false, message: "Version is required and must be an integer" });
-        }
+        if (Number.isNaN(version) || !colorName ) return res.status(400).json({
+            success: false,
+            message: "Invalid request"
+        });
 
-        
-        const product = await ProductModel.findOne({ _id: productId, "colorStyles._id": colorId });
-        if (!product) return res.status(404).json({ success: false, message: "Product or Color Style not found" });
+        const [product, productSku] = await Promise.all([
+            ProductModel.findOne({ _id: productId, "colorStyles._id": colorId, __v: version }),
+            ProductSKUModel.exists({ product_id: productId, color: colorName }) 
+        ]);
+        if (!product) return res.status(404).json({ success: false, message: "Product or Color Style not found, please refresh the page and try again" });
+        if(  productSku ) return res.status(200).json( { success: false, message: "Product SKU found with the following color Style" })
 
-        const colorStyle = product.colorStyles.find(style => style._id.toString() === colorId );
+        const colorStyle = product.colorStyles.find(style => style._id.toString() === colorId);
         const publicIds = colorStyle.gallery.map(img => img.publicId);
+
+        if(colorStyle.is_default) return res.status(400).json({ success: false, message: "Default color cannot be removed, Please change default first"});
 
         const updatedProduct = await ProductModel.findOneAndUpdate(
             { _id: productId, __v: version },
@@ -311,94 +312,130 @@ export const removeColorStyle = async (req, res) => {
         }
 
         res.status(200).json({ success: true, data: updatedProduct });
-        
+
     } catch (err) {
+        console.log(err);
         res.status(500).json({ success: false, error: err.message });
     }
 };
-
 // <---------------- here comes the logic to to add the images to a color color ------------>
 export const addImagesToExistingColor = async (req, res) => {
-    imageUploader.array("gallery", 10)(req, res, async (err) => {
-        if (err) return res.status(500).json({ success: false, error: err.message });
 
-        const { colorName, version } = req.body;
-        const filePaths = req.files.map(file => ({ imgUrl: file.path, publicId: file.filename }));
+    try {
 
-        try {
-            const updatedProduct = await ProductModel.findOneAndUpdate(
-                {
-                    _id: req.params.id,
-                    __v: version,
-                    "colorStyles.colorName": colorName
-                },
-                {
-                    $push: { "colorStyles.$.gallery": { $each: filePaths } },
-                    $inc: { __v: 1 }
-                },
-                { new: true }
-            );
+        imageUploader.array("gallery", 10)(req, res, async (err) => {
 
-            if (!updatedProduct) {
+            if (err) return res.status(500).json({ success: false, error: err.message });
+
+            if (!req.files?.length) return res.status(400).json({ success: false, message: "No files were uploaded" });
+
+            const productId = req.params.id;
+            const colorId = req.params.colorId;
+
+            const version = Number.parseInt(req.body?.version);
+
+            if (Number.isNaN(version)) return res.status(400).json({
+                success: false,
+                message: "Updates are not possible without version number"
+            });
+
+            const filePaths = req.files.map(file => ({ imgUrl: file.path, publicId: file.filename }));
+
+
+            try {
+
+
+                const updatedProduct = await ProductModel.findOneAndUpdate(
+                    {
+                        _id: productId,
+                        __v: version,
+                        "colorStyles._id": colorId
+                    },
+                    {
+                        $push: { "colorStyles.$.gallery": { $each: filePaths } },
+                        $inc: { __v: 1 }
+                    },
+                    { new: true }
+                );
+
+                if (!updatedProduct) {
+
+                    await Promise.all(filePaths.map(img => cloudinary.uploader.destroy(img.publicId)));
+                    return res.status(409).json({ success: false, message: "Conflict: Version mismatch or color not found" });
+                }
+
+                res.status(200).json({ success: true, data: updatedProduct });
+            } catch (error) {
                 await Promise.all(filePaths.map(img => cloudinary.uploader.destroy(img.publicId)));
-                return res.status(409).json({ success: false, message: "Conflict: Version mismatch or color not found" });
+                res.status(500).json({ success: false, error: error.message });
             }
+        });
 
-            res.status(200).json({ success: true, data: updatedProduct });
-        } catch (error) {
-            await Promise.all(filePaths.map(img => cloudinary.uploader.destroy(img.publicId)));
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            succes: false, message: err.message
+        });
+    }
 };
 
 // <--------------- here comes the logic to remove the images from the color --------------->
 export const removeImageFromColor = async (req, res) => {
+
+
+
     try {
-        const { id } = req.params;
-        const { colorName, publicId, version } = req.body;
 
-        if (version === undefined) return res.status(400).json({ success: false, message: "Version is required" });
+        const productId = req.params.id;
+        const colorId = req.params.colorId;
+        const version = Number.parseInt(req.body?.version);
 
-        // 1. Find the image details first to ensure it exists in this specific color group
-        const product = await ProductModel.findOne({
-            _id: id,
-            "colorStyles.colorName": colorName,
-            "colorStyles.gallery.publicId": publicId
+        const { publicIdList } = req.body; // publicIdList: ["id1", "id2"]
+
+
+
+        if (!publicIdList || !Array.isArray(publicIdList) || publicIdList.length === 0) return res.status(400).json({
+            success: false,
+            message: "List of  PulbicId are required"
         });
 
-        if (!product) {
-            return res.status(404).json({ success: false, message: "Image not found in specified color style" });
-        }
+        if (Number.isNaN(version)) return res.status(400).json({
+            success: false,
+            message: "Updates are not possible without version number",
+            version,
+            productId,
+            colorId
+        });
+        // 2. Update DB 
 
-        // 2. Update DB
         const updatedProduct = await ProductModel.findOneAndUpdate(
             {
-                _id: id,
+                _id: productId,
                 __v: version,
-                "colorStyles.colorName": colorName
+                "colorStyles._id": colorId
             },
             {
-                $pull: { "colorStyles.$.gallery": { publicId: publicId } },
+                $pull: { "colorStyles.$.gallery": { publicId: { $in: publicIdList } } },
                 $inc: { __v: 1 }
             },
             { new: true }
         );
 
         if (!updatedProduct) {
-            return res.status(409).json({ success: false, message: "Version mismatch" });
+            return res.status(409).json({ success: false, message: "Version mismatch or color not found, please refresh the page and try again", version, productId, colorId });
         }
 
-        // 3. Delete from Cloudinary
-        await cloudinary.uploader.destroy(publicId);
+        // 3. Delete multiple from Cloudinary
+        await Promise.all(publicIdList.map(pid => cloudinary.uploader.destroy(pid)));
 
         res.status(200).json({
             success: true,
-            message: "Image removed successfully",
+            message: "Images removed successfully",
             data: updatedProduct
         });
 
     } catch (err) {
+
         res.status(500).json({ success: false, error: err.message });
     }
 };
