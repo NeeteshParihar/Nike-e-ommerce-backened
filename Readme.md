@@ -250,3 +250,22 @@ so we comes accorss a concept that we never deletes a product ones it created ra
 2. Active: The product is visible to both client and admin 
 3. Archived: Hidden from search and category listing pages, but the URL still works, best when the product is discontinued
 4. Deleted: Completely hidden from both the frontend and the main admin product list (unless the admin specifically filters for "Deleted").
+
+
+
+< --------understand the discounting -------->
+
+1. static Discount : mrp - price
+2. Dynamic Discounts:  coupon/ Promo code --> store the codes in the collection and then apply the discount during checkOut 
+3. Catgory/ Product / seasonal sales we will handle this later  ex: buy 2 and get 1 free , 10% on saturday on Running Shoes
+
+
+
+< -------Understanding the sizes in product sku ------>
+
+1. the size can be of many things like shoe,  clothes and others as well
+2. so we have to standarise the shoe size, clothes size and others
+3. then store also store the conversion units of there too like  size of shoe UK-10 can be converted to  US-8, JP-4 etc
+4. so in frontend we will show user the standered size but also give them a manual to look for perfect size in the  UK standard
+
+

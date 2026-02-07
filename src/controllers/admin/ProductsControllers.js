@@ -6,7 +6,7 @@ import { v2 as cloudinary } from "cloudinary";
 import ProductModel from "../../models/Products.js";
 import ProductSKUModel from "../../models/ProductSku.js";
 import { imageUploader } from "../../config/cloudinaryConfig.js";
-import { generateSlug } from "../../uitls/slugGenerator.js"
+import { generateSlug } from "../../uitls/CodesGenerator.js"
 
 // import the querBuilders 
 import { queryForUpdatingBasicDetails, getProductParamsForCategoryUpdate } from "../../uitls/ProductQueryBuilders.js";
