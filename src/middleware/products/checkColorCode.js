@@ -1,10 +1,11 @@
 import ProductModel from "../../models/Products.js";
+import MasterColorModel from "../../models/color.js";
+
 
 export const preCheckColorGroup = async (req, res, next) => {
     try {
 
-        const colorName = req.headers['x-color-name'];
-        const colorCode = req.headers['x-color-code'];
+        const colorName = req.headers['x-color-name'];      
         const category = req.headers['x-category'];   
         const version =  Number.parseInt(req.headers['x-version']) ;
 
@@ -12,11 +13,24 @@ export const preCheckColorGroup = async (req, res, next) => {
 
         if( !Number.isInteger(version) ) return res.status(400).json({
             success: false, message: "Updates are not possible without version number"
-        })
+        });
 
-        if (!colorName || !colorCode || !category) {
+        if (!colorName || !category) {
             return res.status(400).json({ success: false, error: "Missing required headers" });
         }
+
+        // we need the colorcode and the color group 
+        const color = await MasterColorModel.findOne({
+            name: colorName,            
+        });
+
+        if(!color) return res.status(400).json({
+            success: false, message: "Invalid Color, please create the color first and try again",
+            colorName
+        });
+
+        const colorCode = color.hexCode;
+        const colorGroup = color.group; 
 
         // Check if the product already has this color name or hex code
         const productWithColor = await ProductModel.findOne({
@@ -35,6 +49,7 @@ export const preCheckColorGroup = async (req, res, next) => {
         
         req.colorName = colorName;
         req.colorCode = colorCode;
+        req.colorGroup = colorGroup;
         req.category = category;        
         req.version = version;
         

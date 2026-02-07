@@ -2,9 +2,10 @@ import mongoose from "mongoose";
 
 // make the color_style schema 
 
-const colorStyleSchema = new mongoose.Schema({
+const colorStyleSchema = new mongoose.Schema({ 
     colorName: { type: String, required: true },
     hexCode: { type: String, required: true },
+    group: { type: String, required: true},
     gallery: {
         type: [{
             imgUrl: { type: String, required: true },

@@ -107,7 +107,7 @@ export const addColorToGallery = async (req, res) => {
             return res.status(500).json({ success: false, error: err.message });
         }
 
-        if (!req.files.length) return res.status(400).json({
+        if ( !req.files?.length) return res.status(400).json({
             success: false, error: "No files were uploaded"
         });
 
@@ -129,6 +129,7 @@ export const addColorToGallery = async (req, res) => {
                     colorStyles: {
                         colorName: req.colorName,
                         hexCode: req.colorCode,
+                        group: req.colorGroup,
                         gallery: filePaths,
                     }
                 },
@@ -288,7 +289,8 @@ export const removeColorStyle = async (req, res) => {
             ProductSKUModel.exists({ product_id: productId, color: colorName }) 
         ]);
         if (!product) return res.status(404).json({ success: false, message: "Product or Color Style not found, please refresh the page and try again" });
-        if(  productSku ) return res.status(200).json( { success: false, message: "Product SKU found with the following color Style" })
+
+        if(  productSku ) return res.status(200).json( { success: false, message: "Product SKU found with the following color Style" });
 
         const colorStyle = product.colorStyles.find(style => style._id.toString() === colorId);
         const publicIds = colorStyle.gallery.map(img => img.publicId);
@@ -308,6 +310,8 @@ export const removeColorStyle = async (req, res) => {
 
         // Cleanup Cloudinary
         if (publicIds.length > 0) {
+
+            // wrap this inside the try and catch and when the deletion failed log the error and store the public id in the database to for clearing these images  
             await Promise.all(publicIds.map(pid => cloudinary.uploader.destroy(pid)));
         }
 
@@ -360,7 +364,9 @@ export const addImagesToExistingColor = async (req, res) => {
 
                 if (!updatedProduct) {
 
+                    // wrap this inside the try and catch and when the deletion failed log the error and store the public id in the database to for clearing these images 
                     await Promise.all(filePaths.map(img => cloudinary.uploader.destroy(img.publicId)));
+
                     return res.status(409).json({ success: false, message: "Conflict: Version mismatch or color not found" });
                 }
 
@@ -384,14 +390,13 @@ export const removeImageFromColor = async (req, res) => {
 
 
 
-    try {
+    try { 
 
         const productId = req.params.id;
         const colorId = req.params.colorId;
         const version = Number.parseInt(req.body?.version);
 
         const { publicIdList } = req.body; // publicIdList: ["id1", "id2"]
-
 
 
         if (!publicIdList || !Array.isArray(publicIdList) || publicIdList.length === 0) return res.status(400).json({
@@ -426,6 +431,7 @@ export const removeImageFromColor = async (req, res) => {
         }
 
         // 3. Delete multiple from Cloudinary
+        // wrap this inside the try and catch and when the deletion failed log the error and store the public id in the database to for clearing these images 
         await Promise.all(publicIdList.map(pid => cloudinary.uploader.destroy(pid)));
 
         res.status(200).json({
