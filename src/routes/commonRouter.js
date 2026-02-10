@@ -1,9 +1,16 @@
 
 import { Router } from "express";
-import { getProduct } from "../controllers/common/ProductsControllers.js";
+import productCommonRouter from "./commonSubRoutes/ProductRoutes.js";
+import productSkuCommonRouter from "./commonSubRoutes/ProductSkuRoutes.js";
 
-const common = Router();
 
-common.get("/product/:id",getProduct );
+const commonRouter = Router();
 
-export default common;
+commonRouter.use("/product", productCommonRouter);
+commonRouter.use("/productSku", productSkuCommonRouter);
+
+export default commonRouter;
+
+
+
+

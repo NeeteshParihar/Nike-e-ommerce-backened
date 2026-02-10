@@ -19,6 +19,11 @@ app.use(express.json());
 app.use("/api/admin", adminRouter);
 app.use("/api/common", common);
 
+
+app.use("/", (req, res)=>{
+    res.status(404).send("🤔 What you are looking for! ")
+})
+
 app.listen( PORT, ()=>{
     console.log(`the server is running on port ${PORT}`);
 });

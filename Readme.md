@@ -267,5 +267,44 @@ so we comes accorss a concept that we never deletes a product ones it created ra
 2. so we have to standarise the shoe size, clothes size and others
 3. then store also store the conversion units of there too like  size of shoe UK-10 can be converted to  US-8, JP-4 etc
 4. so in frontend we will show user the standered size but also give them a manual to look for perfect size in the  UK standard
+5. consider "size" as an object which belongs to a category and  gender
+
+```js
+const sku = {
+  product_id: "...",
+  sku_code: "NKE-PEG41-BLK-UK10M",
+  size: "UK-10-M", // The standardized key
+  stock: 50,
+  // ... rest of fields
+}
+
+// note here size = "UK-10-M"   this key will be used to search for its respective units in others standards like US or  JP 
+// this way i can easy search for others standars of UK-10-M 
+
+```
+
+```js
+
+  Internal-Key, Display (IN/UK), US (Men), EU,CM/JP, Category
+  UK-7-M, 7, 8, 41, 26, Shoes
+  UK-8-M, 8, 9, 42.5,27, Shoes
+  UK-9-M, 9, 10, 44, 28, Shoes
+  CL-L-M, L, L, 52, 106, Clothing
+
+```
 
 
+```js
+
+sizeKey,category,primaryValue (UK),US Conversion,CM/JP,sortOrder
+SH-M-10,Shoes,10,11,29.0,10
+AP-M-L,Apparel,L,L,106 (Chest),3
+
+
+```
+
+
+# Creating the productSku, it has skucode as the unique identifier, we generate sku_code as [brand]-[name]-[color]-[size]-[gender]
+
+
+# Audit Log It helps us know who changed the record like product or product sku and what was the record before the change , it will a seperate collection

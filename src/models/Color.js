@@ -5,6 +5,7 @@ const masterColorSchema = new mongoose.Schema({
         type: String, 
         required: true, 
         unique: true, 
+        lowercase: true, 
         trim: true 
     },
     hexCode: {   // this will store the hex color code

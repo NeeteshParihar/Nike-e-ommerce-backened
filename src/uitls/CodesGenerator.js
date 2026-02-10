@@ -1,23 +1,21 @@
 
-export const generateSlug = (name)=>{
-    return name.toLowerCase().split(' ').join('-')
+export const generateSlug = (name, gender)=>{
+    return name.toLowerCase().split(' ').join('-') + "-" + gender.toLowerCase();
 }
 
 
-export const generateSkuCode = ({brand, name, color, size}) => {
+// Inside your generation utility
+export const generateSkuCode = (sku) => {
+    const brand = sku.brand.substring(0, 3).toUpperCase();
+    const name = sku.name.replace(/\s+/g, '').substring(0, 5).toUpperCase();
+    const color = sku.color.substring(0, 3).toUpperCase();
+    const gender = sku.gender.substring(0, 1).toUpperCase(); // M, W, K
+    const size = sku.size.primaryValue.toString().replace('.', ''); 
 
-    const b = brand.substring(0, 3).toUpperCase();  // Nike
-    // Remove spaces/special chars from name and take first 5 
-    const n = name.replace(/\s+/g, '').substring(0, 5).toUpperCase(); // Jordan 1
-    const c = color.substring(0, 3).toUpperCase(); // university Red
-    const s = size.toString().replace('.', '').toUpperCase(); // 10.5 becomes 105 
-
-    return `${b}-${n}-${c}-${s}`;
+    return `${brand}-${name}-${color}-${gender}-${size}`;
 };
 
-
 /* 
-
 Alphanumeric Only: Avoid special characters like @, #, or $. Use hyphens - as separators.
 
 No Spaces: Spaces break URL parameters and CSV exports.
@@ -27,3 +25,5 @@ Avoid confusing letters: In some systems, people avoid 0 (zero) and O (letter), 
 Fixed Length (Ideal): Try to keep the segments consistent so your barcode scanners or warehouse software can parse them easily.
 
 */
+
+

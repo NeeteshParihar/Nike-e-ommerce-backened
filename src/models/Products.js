@@ -2,10 +2,10 @@ import mongoose from "mongoose";
 
 // make the color_style schema 
 
-const colorStyleSchema = new mongoose.Schema({ 
+const colorStyleSchema = new mongoose.Schema({
     colorName: { type: String, required: true },
     hexCode: { type: String, required: true },
-    group: { type: String, required: true},
+    group: { type: String, required: true },
     gallery: {
         type: [{
             imgUrl: { type: String, required: true },
@@ -31,6 +31,13 @@ const storytellingSchema = new mongoose.Schema({
 const productSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     brand: { type: String, default: 'Nike' },
+    gender: {
+        type: String,
+        LowerCase: true,
+        enum: ['men', 'women', 'kids', 'unisex'],
+        required: true,
+        index: true
+    },
     basePrice: { type: Number, required: true },
     currency: { type: String, default: 'INR' },
     slug: { type: String, required: true, unique: true },
@@ -48,7 +55,7 @@ const productSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['active', 'draft', 'archived', 'deleted'],
-        default: 'draft' 
+        default: 'draft'
     },
     storytelling: [storytellingSchema],
 }, { timestamps: true });

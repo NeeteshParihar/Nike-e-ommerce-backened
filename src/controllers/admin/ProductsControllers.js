@@ -16,12 +16,11 @@ export const createProduct = async (req, res) => {
     try {
 
         // make sure our data validation layer validate and sanitize this data
-        const { name, brand, basePrice, description, details, categoryIds, colorStyles, storytelling } = req.body;
-
-        const slug = generateSlug(name);
+        const { name, gender, brand, basePrice, description, details, categoryIds, colorStyles, storytelling } = req.body;
+        const slug = generateSlug(name, gender);
 
         const newProduct = await ProductModel.create({
-            name, brand, basePrice, slug, description, details, categoryIds, colorStyles, storytelling
+            name, gender, brand, basePrice, slug, description, details, categoryIds, colorStyles, storytelling
         })
 
         return res.status(201).json({
