@@ -10,7 +10,7 @@ import {
     removeImageFromColor
 } from "../../controllers/admin/ProductsControllers.js";
 
-import { preCheckColorGroup } from "../../middleware/products/checkColorCode.js";
+import { preCheckColorGroup } from "../../middleware/productMiddlewares.js";
 
 const productRouter = Router(); 
 

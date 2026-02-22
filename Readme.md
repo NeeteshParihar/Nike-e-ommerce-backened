@@ -308,3 +308,6 @@ AP-M-L,Apparel,L,L,106 (Chest),3
 
 
 # Audit Log It helps us know who changed the record like product or product sku and what was the record before the change , it will a seperate collection
+
+
+# Understanding of indexing, Aggregiation and Text index 

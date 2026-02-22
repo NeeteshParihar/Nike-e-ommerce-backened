@@ -10,7 +10,3 @@ commonRouter.use("/product", productCommonRouter);
 commonRouter.use("/productSku", productSkuCommonRouter);
 
 export default commonRouter;
-
-
-
-
