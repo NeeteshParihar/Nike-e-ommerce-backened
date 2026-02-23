@@ -6,6 +6,9 @@ const colorStyleSchema = new mongoose.Schema({
     colorName: { type: String, required: true },
     hexCode: { type: String, required: true },
     group: { type: String, required: true },
+    primaryImage: {
+        type: String, default: ""
+    },
     gallery: {
         type: [{
             imgUrl: { type: String, required: true },

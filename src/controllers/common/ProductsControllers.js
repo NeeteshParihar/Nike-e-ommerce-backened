@@ -14,118 +14,65 @@ export const getProduct = async (req, res) => {
 }
 
 export const searchProducts = async (req, res) => {
-
     try {
 
         const { leafCategories, gender, minPrice, maxPrice, colors, sizes } = req.body;
+        const pipeline = [];
 
-        const pipeLine = [];
+        // 1. Initial Product Filter (Category, Gender, Status)
+        // This stage uses the Product indexes (categoryIds, gender, status)
+        const productMatch = { status: "active" };
+        if (leafCategories?.length > 0) productMatch.categoryIds = { $in: leafCategories };
+        if (gender) productMatch.gender = gender;
+        
+        pipeline.push({ $match: productMatch });
 
-        // write down the match stage, this will utilize the index created to the collection
-        const matchStage = {};
-        matchStage.$match = {
-            status: "active"
-        };
-
-        if (leafCategories && leafCategories.length > 0) {
-            matchStage.$match.categoryIds = {
-                $in: leafCategories
-            }
-        }
-
-        if (gender) {
-            matchStage.$match.gender = gender;
-        }
-
-        // perform the lookup operation to productSku
-        const lookupStage = {
+        // 2. Optimized Lookup with Filtering
+        // We filter the SKUs INSIDE the lookup so we don't bring unnecessary data into memory
+        pipeline.push({
             $lookup: {
-                from: "productskus",
-                localField: "_id",
-                foreignField: "productId",
-                as: "productSkus"
+                from: "productskus", // the collection
+                let: { prodId: "$_id" }, // let is used to make varibale to store the values from parentdoc, here prodId is the variable which can be accessed using $$prodId
+                pipeline: [
+                    {
+                        $match: { 
+                            $expr: { $eq: ["$productId", "$$prodId"] }, // match the productId field in the productSku with  $$prodId
+                            ...(minPrice && maxPrice ? { price: { $gte: minPrice, $lte: maxPrice } } : {}),
+                            ...(colors?.length > 0 ? { color: { $in: colors.map(c => c.toLowerCase()) } } : {}),
+                            ...(sizes?.length > 0 ? { "size.sizeKey": { $in: sizes } } : {})
+                        }
+                    }
+                ],
+                as: "matchingSkus"
             }
-        }
+        });
 
-        pipeLine.push(matchStage);
-        pipeLine.push({
-            $project: {
-                _id: 1,
-                name: 1,
-                slug: 1,
-                brand: 1,
-                colorStyles: 1
-            }
-        })
-        pipeLine.push(lookupStage);
+        // 3. The "Existence" Filter
+        // If a user filtered by size, we ONLY want products that have at least one matching SKU
+        pipeline.push({
+            $match: { "matchingSkus.0": { $exists: true } }
+        });
 
-        pipeLine.push({
-            $unwind: "$productSkus"
-        })
-
-        pipeLine.push({
+        // 4. Final Projection
+        // Instead of $group, we just shape the data. This is faster.
+        pipeline.push({
             $project: {
                 _id: 1,
                 name: 1,
                 slug: 1,
                 brand: 1,
                 colorStyles: 1,
-                "productSkus._id": 1,
-                "productSkus.skuCode": 1,
-                "productSkus.price": 1,
-                "productSkus.size": 1,
-                "productSkus.color": 1,
-                "productSkus.stock": 1
+                // Show the user the lowest price available for their specific filters
+                displayPrice: { $min: "$matchingSkus.price" },
+                // Optional: return count of matching variants
+                variantCount: { $size: "$matchingSkus" }
             }
-        })
+        });
 
-        if (minPrice && maxPrice) {
-            pipeLine.push({
-                $match: {
-                    "productSkus.price": {
-                        $gte: minPrice,
-                        $lte: maxPrice
-                    }
-                }
-            })
-        }
-
-        if (colors && colors.length > 0) {
-            pipeLine.push({
-                $match: {
-                    "productSkus.color": {
-                        $in: colors
-                    }
-                }
-            })
-        }
-
-        if (sizes && sizes.length > 0) {
-            pipeLine.push({
-                $match: {
-                    "productSkus.size.sizeKey": {
-                        $in: sizes
-                    }
-                }
-            })
-        }
-
-        pipeLine.push({
-            $group: {
-                _id: "$_id",
-                name: { $first: "$name" },
-                slug: { $first: "$slug" },
-                brand: { $first: "$brand" },
-                colorStyles: { $first: "$colorStyles" },
-                minPrice: { $min: "$productSkus.price" },              
-            }
-        })
-
-        const products = await ProductModel.aggregate(pipeLine);
-        return res.status(200).json({ success: true, data: products });
+        const products = await ProductModel.aggregate(pipeline);
+        return res.status(200).json({ success: true, count: products.length, data: products });
 
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
-
     }
-}
+};

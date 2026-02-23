@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import CategoryModel from "../../models/Category.js";
 import { v2 as cloudinary } from "cloudinary";
 
+
 // import the controllers
 import ProductModel from "../../models/Products.js";
 import ProductSKUModel from "../../models/ProductSku.js";
@@ -54,7 +55,6 @@ export const updateProductDetails = async (req, res) => {
             message: "Updates are not possible without version number"
         });
 
-
         // getting only fields those are send
         const updateParams = queryForUpdatingBasicDetails({ basePrice, description, details, status });
         // { basePrice: price, ...}
@@ -106,7 +106,7 @@ export const addColorToGallery = async (req, res) => {
             return res.status(500).json({ success: false, error: err.message });
         }
 
-        if ( !req.files?.length) return res.status(400).json({
+        if (!req.files?.length) return res.status(400).json({
             success: false, error: "No files were uploaded"
         });
 
@@ -123,18 +123,27 @@ export const addColorToGallery = async (req, res) => {
                 __v: req.version
             };
 
-            const update = {
-                $push: {
-                    colorStyles: {
-                        colorName: req.colorName,
-                        hexCode: req.colorCode,
-                        group: req.colorGroup,
-                        gallery: filePaths,
+            const update = [
+                {
+                    $set: {
+                        colorStyles: {
+                            $concatArrays: [
+                                "$colorStyles",
+                                [{
+                                    colorName: req.colorName,
+                                    hexCode: req.colorCode,
+                                    group: req.colorGroup,
+                                    gallery: filePaths,
+                                    primaryImage: filePaths[0].imgUrl,
+                                    // IF size is 0, then true, ELSE false
+                                    isDefault: { $eq: [{ $size: "$colorStyles" }, 0] }
+                                }]
+                            ]
+                        },
+                        __v: { $add: ["$__v", 1] }
                     }
-                },
-                $inc: { __v: 1 } // Bump the version
-            };
-
+                }
+            ];
 
             const updatedProduct = await ProductModel.findOneAndUpdate(query, update, { new: true });
 
@@ -169,7 +178,6 @@ export const addColorToGallery = async (req, res) => {
     });
 
 }
-
 
 export const updateProductCategories = async (req, res) => {
     try {
@@ -227,7 +235,6 @@ export const updateProductCategories = async (req, res) => {
     }
 }
 
-
 export const deleteProduct = async (req, res) => {
 
     try {
@@ -272,29 +279,28 @@ export const deleteProduct = async (req, res) => {
 export const removeColorStyle = async (req, res) => {
     try {
 
-        const productId = req.params.id;        
+        const productId = req.params.id;
         const colorId = req.params.colorId;
         const version = Number.parseInt(req.body?.version);
         const colorName = req.body.colorName;
-       
 
-        if (Number.isNaN(version) || !colorName ) return res.status(400).json({
+        if (Number.isNaN(version) || !colorName) return res.status(400).json({
             success: false,
             message: "Invalid request"
         });
 
         const [product, productSku] = await Promise.all([
             ProductModel.findOne({ _id: productId, "colorStyles._id": colorId, __v: version }),
-            ProductSKUModel.exists({ product_id: productId, color: colorName }) 
+            ProductSKUModel.exists({ product_id: productId, color: colorName })
         ]);
         if (!product) return res.status(404).json({ success: false, message: "Product or Color Style not found, please refresh the page and try again" });
 
-        if(  productSku ) return res.status(200).json( { success: false, message: "Product SKU found with the following color Style" });
+        if (productSku) return res.status(200).json({ success: false, message: "Product SKU found with the following color Style" });
 
         const colorStyle = product.colorStyles.find(style => style._id.toString() === colorId);
         const publicIds = colorStyle.gallery.map(img => img.publicId);
 
-        if(colorStyle.is_default) return res.status(400).json({ success: false, message: "Default color cannot be removed, Please change default first"});
+        if (colorStyle.is_default) return res.status(400).json({ success: false, message: "Default color cannot be removed, Please change default first" });
 
         const updatedProduct = await ProductModel.findOneAndUpdate(
             { _id: productId, __v: version },
@@ -386,10 +392,7 @@ export const addImagesToExistingColor = async (req, res) => {
 
 // <--------------- here comes the logic to remove the images from the color --------------->
 export const removeImageFromColor = async (req, res) => {
-
-
-
-    try { 
+    try {
 
         const productId = req.params.id;
         const colorId = req.params.colorId;
@@ -442,5 +445,49 @@ export const removeImageFromColor = async (req, res) => {
     } catch (err) {
 
         res.status(500).json({ success: false, error: err.message });
+    }
+};
+
+// this will helps us edit the primaryImage and isDefault parameter of the
+
+export const editProductColor = async (req, res) => {
+
+    const { id, colorId } = req.params;
+    const { primaryImage, isDefault, version } = req.body;
+
+    try {
+
+        // approch
+        // fetch the complete document
+        // update on the server
+        // send the updates to monogodb
+
+        const product = await ProductModel.findOne({ _id: id, __v: version });
+        if (!product) return res.status(404).json({ message: "Product not found or version mismatch" });
+
+        product.colorStyles.forEach((style) => {
+            // Check if this is the style we are editing
+            if (style._id.toString() === colorId) {
+                // Validate if image exists in gallery
+                const imageExists = style.gallery.some(img => img.imgUrl === primaryImage);
+                if (imageExists) {
+                    style.primaryImage = primaryImage;
+                    style.isDefault = isDefault;
+                } else {
+                    return res.status(400).json({
+                        success: false, message: "invalid primaryImage"
+                    })
+                }
+
+            } else {
+                // If the edited style is set to true, all others must be false
+                if (isDefault) style.isDefault = false;
+            }
+        });
+
+        await product.save();
+        return res.status(200).json(product);
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 };

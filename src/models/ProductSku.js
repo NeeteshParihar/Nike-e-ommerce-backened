@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
 
-const sizeSchema = new mongoose.Schema({
-   
+const sizeSchema = new mongoose.Schema({   
     sizeKey: { type: String, required: true },
     primaryValue: { type: String, required: true},
     standard: { type: String, enum: ["IN", "UK", "EU", "US", "JP"], default: "UK" },   
 })
+
 
 const productSKUSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },

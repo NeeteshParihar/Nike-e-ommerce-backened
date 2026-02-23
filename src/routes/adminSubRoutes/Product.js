@@ -7,7 +7,8 @@ import {
     deleteProduct,
     removeColorStyle,
     addImagesToExistingColor,
-    removeImageFromColor
+    removeImageFromColor,
+    editProductColor
 } from "../../controllers/admin/ProductsControllers.js";
 
 import { preCheckColorGroup } from "../../middleware/productMiddlewares.js";
@@ -32,6 +33,7 @@ productRouter.delete("/:id/color/:colorId", removeColorStyle );
 
 productRouter.patch("/:id/color/:colorId/addImages", addImagesToExistingColor); 
 productRouter.patch("/:id/color/:colorId/removeImages", removeImageFromColor);
+productRouter.patch( "/:id/color/:colorId/edit", editProductColor)
 
 
 export default productRouter;
