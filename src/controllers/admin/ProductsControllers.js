@@ -17,11 +17,11 @@ export const createProduct = async (req, res) => {
     try {
 
         // make sure our data validation layer validate and sanitize this data
-        const { name, gender, brand, basePrice, description, details, categoryIds, colorStyles, storytelling } = req.body;
+        const { name, gender, brand, description, details, categoryIds, storytelling } = req.body;
         const slug = generateSlug(name, gender);
 
         const newProduct = await ProductModel.create({
-            name, gender, brand, basePrice, slug, description, details, categoryIds, colorStyles, storytelling
+            name, gender, brand, slug, description, details, categoryIds, storytelling
         })
 
         return res.status(201).json({
@@ -47,7 +47,7 @@ export const updateProductDetails = async (req, res) => {
         // <--- make sure to pass this data through data validation and sanitization layer before saving ----->
 
         const productId = req.params.id;
-        const { basePrice, description, details, status } = req.body;
+        const { description, details, status } = req.body;
         const version = Number.parseInt(req.body?.version);
 
         if (Number.isNaN(version)) return res.status(400).json({
@@ -56,7 +56,7 @@ export const updateProductDetails = async (req, res) => {
         });
 
         // getting only fields those are send
-        const updateParams = queryForUpdatingBasicDetails({ basePrice, description, details, status });
+        const updateParams = queryForUpdatingBasicDetails({ description, details, status });
         // { basePrice: price, ...}
 
         const updatedProduct = await ProductModel.findOneAndUpdate(
@@ -123,6 +123,7 @@ export const addColorToGallery = async (req, res) => {
                 __v: req.version
             };
 
+            // aggregiation update to make complex updates
             const update = [
                 {
                     $set: {
@@ -145,7 +146,8 @@ export const addColorToGallery = async (req, res) => {
                 }
             ];
 
-            const updatedProduct = await ProductModel.findOneAndUpdate(query, update, { new: true });
+         
+            const updatedProduct = await ProductModel.findOneAndUpdate(query, update, { new: true, updatePipeline: true });
 
             // 3. THE ROLLBACK: If version mismatch occurred during upload
             if (!updatedProduct) {
@@ -171,6 +173,7 @@ export const addColorToGallery = async (req, res) => {
             // Safety Rollback for any unexpected Database crash
             const deletePromises = filePaths.map(img => cloudinary.uploader.destroy(img.publicId));
             await Promise.all(deletePromises);
+            console.log(err)
             res.status(500).json({ success: false, error: "Database error occurred. Uploaded images rolled back." });
         }
 

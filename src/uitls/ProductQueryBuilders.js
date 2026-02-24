@@ -1,8 +1,8 @@
 
-export const queryForUpdatingBasicDetails = ({ basePrice, description, details, status }) => {
+export const queryForUpdatingBasicDetails = ({ description, details, status }) => {
 
     const query = {};
-    if (basePrice) query.basePrice = basePrice;
+    
     if (description) query.description = description;
     if (details) query.details = details;
     if( status ) query.status = status;   

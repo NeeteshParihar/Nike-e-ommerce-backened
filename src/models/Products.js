@@ -40,8 +40,7 @@ const productSchema = new mongoose.Schema({
         enum: ['men', 'women', 'kids', 'unisex'],
         required: true,
         index: true
-    },
-    basePrice: { type: Number, required: true },
+    },   
     currency: { type: String, default: 'INR' },
     slug: { type: String, required: true, unique: true },
     description: { type: String, required: true },
