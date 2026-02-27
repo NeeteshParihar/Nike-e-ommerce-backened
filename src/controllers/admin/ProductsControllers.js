@@ -456,7 +456,9 @@ export const removeImageFromColor = async (req, res) => {
 export const editProductColor = async (req, res) => {
 
     const { id, colorId } = req.params;
-    const { primaryImage, isDefault, version } = req.body;
+    const { primaryImage, isDefault } = req.body;
+    const version = Number.parseInt(req.body?.version);
+
 
     try {
 
@@ -465,8 +467,14 @@ export const editProductColor = async (req, res) => {
         // update on the server
         // send the updates to monogodb
 
-        const product = await ProductModel.findOne({ _id: id, __v: version });
+        if(Number.isNaN(version) || !primaryImage || typeof isDefault !== "boolean") return res.status(400).json({
+            success: false, message: "Invalid request", data: { version, primaryImage, isDefault }
+        })       
+        
+        const product = await ProductModel.findOne({ _id: id, __v: version, "colorStyles._id": colorId});
         if (!product) return res.status(404).json({ message: "Product not found or version mismatch" });
+
+        let isColorDefaultAlready = false;
 
         product.colorStyles.forEach((style) => {
             // Check if this is the style we are editing
@@ -481,12 +489,20 @@ export const editProductColor = async (req, res) => {
                         success: false, message: "invalid primaryImage"
                     })
                 }
+                isColorDefaultAlready = style.isDefault;
+                style.isDefault = isDefault;
 
             } else {
                 // If the edited style is set to true, all others must be false
                 if (isDefault) style.isDefault = false;
             }
         });
+
+        // if( isDefault === false && isColorDefaultAlready === false)  in this case we don't change the default
+        // in this case we have to make the first color as the default
+        if( isDefault === false && isColorDefaultAlready === true){
+            product.colorStyles[0].isDefault = true;
+        }
 
         await product.save();
         return res.status(200).json(product);

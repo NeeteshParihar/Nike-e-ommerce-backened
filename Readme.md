@@ -311,3 +311,7 @@ AP-M-L,Apparel,L,L,106 (Chest),3
 
 
 # Understanding of indexing, Aggregiation and Text index 
+
+# while you are updating the primaryImage of the color and its field isDefault we can use .save method, updateOne method, and aggregiation
+# note while we delete the color we must ensure if we have deleted the default then we should make another color as default, similarily we deletes the primaryImage we must ensure that we set another image as the primaryImage , also handle the base cases where there is only one image and there is only one color
+

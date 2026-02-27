@@ -24,7 +24,7 @@ export const searchProducts = async (req, res) => {
         const productMatch = { status: "active" };
         if (leafCategories?.length > 0) productMatch.categoryIds = { $in: leafCategories };
         if (gender) productMatch.gender = gender;
-        
+
         pipeline.push({ $match: productMatch });
 
         // 2. Optimized Lookup with Filtering
@@ -35,7 +35,7 @@ export const searchProducts = async (req, res) => {
                 let: { prodId: "$_id" }, // let is used to make varibale to store the values from parentdoc, here prodId is the variable which can be accessed using $$prodId
                 pipeline: [
                     {
-                        $match: { 
+                        $match: {
                             $expr: { $eq: ["$productId", "$$prodId"] }, // match the productId field in the productSku with  $$prodId
                             ...(minPrice && maxPrice ? { price: { $gte: minPrice, $lte: maxPrice } } : {}),
                             ...(colors?.length > 0 ? { color: { $in: colors.map(c => c.toLowerCase()) } } : {}),
@@ -61,7 +61,17 @@ export const searchProducts = async (req, res) => {
                 name: 1,
                 slug: 1,
                 brand: 1,
-                colorStyles: 1,
+                colorStyles: {
+                    $map: {
+                        input: "$colorStyles",
+                        as: "style",
+                        in: {
+                            hexCode: "$$style.hexCode",
+                            colorName: "$$style.colorName",
+                            primaryImage: "$$style.primaryImage"
+                        }
+                    }
+                },
                 // Show the user the lowest price available for their specific filters
                 displayPrice: { $min: "$matchingSkus.price" },
                 // Optional: return count of matching variants
@@ -76,3 +86,6 @@ export const searchProducts = async (req, res) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
+
+
+
