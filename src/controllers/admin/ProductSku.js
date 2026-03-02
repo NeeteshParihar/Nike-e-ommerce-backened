@@ -4,14 +4,15 @@ import { generateSkuCode } from "../../uitls/CodesGenerator.js";
 export const createSkus = async (req, res) => {
     try {
 
+        // heavy lifting is done by the middleware too
         // <------- this controller sole job is to create a new sku ------>
         const { productId, skus } = req.body;
         const { productDetails } = req;       // these are added in the middleware
 
 
         const operations = skus.map(sku => {
-            const skuCode = generateSkuCode({ ...productDetails, ...sku });
 
+            const skuCode = generateSkuCode({ ...productDetails, ...sku });
 
             return {
                 updateOne: {

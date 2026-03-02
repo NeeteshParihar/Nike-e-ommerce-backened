@@ -57,7 +57,7 @@ export const getAggregatedFilters = async (req, res) => {
                         uiType: currentFilter.uiType,
                         value: [...currentFilter.value]
                     };
-                } else if (key === "price") {
+                }else if (key === "price") {
                     // Price Range Merge: [Min, Max]
                     acc[key].value[0] = Math.min(Number(acc[key].value[0]), Number(currentFilter.value[0])).toString();
                     acc[key].value[1] = Math.max(Number(acc[key].value[1]), Number(currentFilter.value[1])).toString();

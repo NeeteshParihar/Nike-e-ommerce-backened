@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const masterColorSchema = new mongoose.Schema({
-    name: {  // this will store the exact color name
+    name: {  // this will store the exact color name // universtiy red
         type: String, 
         required: true, 
         unique: true, 
@@ -13,10 +13,10 @@ const masterColorSchema = new mongoose.Schema({
         required: true, 
         uppercase: true,
         match: [/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Please provide a valid hex color code']
-    },
+    },    
     group: { // this will store the color group like for university red this is will store the red, so user can easily type red and we can give the all red grouped values
         type: String,
-        enum: ['Red', 'Blue', 'Green', 'Black', 'White', 'Grey', 'Multi', 'Other'],
+        enum: ['Red', 'Blue', 'Green', 'Black', 'White', 'Grey', 'other'], // store the name of the shade like university red is the particular shade of red
         required: true 
     }
 }, { timestamps: true });

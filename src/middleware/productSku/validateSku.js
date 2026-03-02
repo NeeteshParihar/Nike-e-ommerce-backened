@@ -29,7 +29,7 @@ export const validateSkusMiddleware = async (req, res, next) => {
         });
 
         // extract the unique colors and sizeKeys from the productCku
-        const skusSizeKeys = [... new Set(skus.map(sku => sku.sizeKey))];
+        const skusSizeKeys = [... new Set(skus.map(sku => sku.sizeKey))];        
         const skusColors = [... new Set(skus.map(sku => sku.color))];
 
         // validate if sizeKey send are in records or not
@@ -42,7 +42,6 @@ export const validateSkusMiddleware = async (req, res, next) => {
             }).select("sizeKey  primaryValue standard"),
             MasterColorModel.find({ name: { $in: skusColors } })
         ]);
-
 
 
         if (sizes.length !== skusSizeKeys.length) return res.status(400).json({ success: false, message: "Invalid size" });

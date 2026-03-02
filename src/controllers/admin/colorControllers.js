@@ -26,7 +26,7 @@ export const createNewColorsBulk = async (req, res) => {
                 },
                 upsert: true
             }
-        }));
+        } ));
 
         const result = await MasterColorModel.bulkWrite(operations, { ordered: false });
 
