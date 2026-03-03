@@ -10,14 +10,14 @@ export const createSkus = async (req, res) => {
         const { productDetails } = req;       // these are added in the middleware
 
 
-        const operations = skus.map(sku => {
+        const operations = skus.map( sku => {
 
             const skuCode = generateSkuCode({ ...productDetails, ...sku });
 
             return {
                 updateOne: {
                     // filter: { skuCode: skuCode }, // we can do it like this but in case 
-                    filter: {  productId: productId, color: sku.color, "size.sizeKey": sku.size.sizeKey}, 
+                    filter: {  productId: productId, displayColors: sku.disPlayColors, "size.sizeKey": sku.size.sizeKey}, 
                     update: {
                         $setOnInsert: {
                             ...sku,

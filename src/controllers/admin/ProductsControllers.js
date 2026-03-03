@@ -38,7 +38,7 @@ export const createProduct = async (req, res) => {
     }
 };
 
-//  here product details those are updatable are : baseprice, desc, details, status
+//  here product details those are updatable are : desc, details, status
 export const updateProductDetails = async (req, res) => {
 
     try {

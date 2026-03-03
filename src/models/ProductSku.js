@@ -8,20 +8,24 @@ const sizeSchema = new mongoose.Schema({
 
 
 const colorSchema = new mongoose.Schema({
-    units: [{ type: String, ref: 'MasterColor' }], // ["University Red", "Black"]
-    display: { type: String },                    // "University Red/Black"
-    groups: [{ type: String, lowercase: true }]   // ["red", "black"]
+   name: { type: String, required: true },
+   hexCode: { type: String, required: true, uppercase: true },
+   group: { type: String, required: true }
 })
-
 
 const productSKUSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     skuCode: { type: String, required: true, unique: true, index: true },
     size: { type: sizeSchema, required: true, _id: false },
-    color: {
-        type: colorSchema,
+    colors: {
+        type: [colorSchema],
         required: true,
-        _id: false,
+        _id: false,      
+    },
+    displayColors: {
+        type: String,
+        required: true,
+        index: true
     },
     price: { type: Number, required: true },
     mrp: { type: Number, required: true },  // validate at controller level that mrp should be never smaller than the price
@@ -34,7 +38,10 @@ const productSKUSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Add this to your ProductSKU Schema
-productSKUSchema.index({ productId: 1, color: 1, "size.sizeKey": 1 }, { unique: true });
+productSKUSchema.index({ productId: 1, displayColors: 1, "size.sizeKey": 1 }, { unique: true });
+
+// validate the colors
+productSKUSchema.path("colors").validate( colors=>colors.length <= 5 , "colors should be atmost of size 5");
 
 const ProductSKU = mongoose.models.ProductSKU || mongoose.model('ProductSKU', productSKUSchema);
 export default ProductSKU;

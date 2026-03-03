@@ -11,81 +11,84 @@ import MasterColorModel from "../../models/color.js";
  * - req.nonEligibleSkus: SKUs that failed validation
  */
 
+
+
 export const validateSkusMiddleware = async (req, res, next) => {
 
     try {
 
         const { productId, skus } = req.body;
 
-        if (!skus || !Array.isArray(skus) || skus.length === 0 || !productId) return res.status(400).json({
-            success: false,
-            message: "Invalid request"
-        })
+        if (skus.length > 50) return res.status(400).json({ success: false, message: "limit the number of skus to 50" });
+        const product = await ProductModel.findById(productId).select("colorStyles brand gender name");
+        if (!product) return res.status(404).json({ success: false, message: "Product not found" });
 
-        const product = await ProductModel.findById(productId).select("name gender brand colorStyles.colorName");
-        if (!product) return res.status(404).json({
-            success: false,
-            message: "Product not found"
-        });
-
-        // extract the unique colors and sizeKeys from the productCku
-        const skusSizeKeys = [... new Set(skus.map(sku => sku.sizeKey))];        
-        const skusColors = [... new Set(skus.map(sku => sku.color))];
-
-        // validate if sizeKey send are in records or not
-        const [sizes, colors] = await Promise.all([
-            MasterSizeModel.find({
-                sizeKey: {
-                    $in: skusSizeKeys
-                },
-                gender: product.gender
-            }).select("sizeKey  primaryValue standard"),
-            MasterColorModel.find({ name: { $in: skusColors } })
-        ]);
-
-
-        if (sizes.length !== skusSizeKeys.length) return res.status(400).json({ success: false, message: "Invalid size" });
-        // validate if colors send are in records or not
-        
-        if (colors.length !== skusColors.length) return res.status(400).json({ success: false, message: "Invalid colors" });
-
-        // check if the color exists in the product or not
-
-        const colorsInProduct = new Set(product.colorStyles.map(color => color.colorName));
-
-        const notFoundColorsInProduct = skusColors.filter(color => !colorsInProduct.has(color));
-
-        if (notFoundColorsInProduct.length > 0) return res.status(400).json({
-            success: false,
-            message: "Please update the gallery of the product first in order to add these colors",
-            data: {
-                missingColors: notFoundColorsInProduct
-            }
-        });
-
-
-        // if execution reaches this point then we can consider that we have valid colors and sizeKeys to add in the skus
+        // take out the colors: [ "university red", "blue", ...]
+        let colorSet = new Set();
+        let sizeSet = new Set();
 
         skus.forEach(sku => {
-            const size = sizes.find(size => size.sizeKey === sku.sizeKey);
-            //  each size contains : { sizeKey, primaryValue, standard } we have replaced the sizeKey to size 
-            sku.size = size;
+            sku.colors.forEach(c => colorSet.add(c.toLowerCase()));
+            sizeSet.add(sku.sizeKey.toUpperCase());
+        });
+
+        // now validate the sku colors and sizes
+        const [sizes, colors] = await Promise.all([
+            MasterSizeModel.find({ sizeKey: { $in: Array.from(sizes) } }).select("sizeKey primaryValue standard"),
+            MasterColorModel.find({ name: { $in: Array.from(colors) } }).select("name hexCode group")
+        ]);
+
+        if (sizes.length !== sizeSet.size || colors.length !== colorSet.size) return res.status(400).json({
+            success: false, message: "Invalid colors or sizes"
+        })
+
+        const colorsInProduct = product.colorStyles.map(({ colors }) => colors.join("/"));
+        let nonEligibleSkus = [];
+
+        skus.forEach(({ colors }) => {
+            const skuColor = colors.join("/");
+            if (!colorsInProduct.includes(skuColor)) nonEligibleSkus.push(colors);
+        })
+
+        if (nonEligibleSkus.length > 0) return res.status(400).json({
+            success: false, message: "Invalid colors Please make sure the product contains these colors first",
+            data: {
+                nonEligibleSkus
+            }
+        })
+
+        // if the execution reaches this point this means: 1. sizes are valid, colors are valid and contained in product
+
+
+        // data transformations
+        skus.forEach(sku => {
+            
+            let completedColors = [];
+            sku.colors.forEach(color => {
+                let c = colors.find(c => c.name.toLowerCase() === color.toLowerCase());
+            })
+
+            let size = sizes.find(s => s.sizeKey.toUpperCase() === sku.sizeKey.toUpperCase());
+
             delete sku.sizeKey;
+            // sort the colors in
+            sku.colors.sort();
+            sku.disPlayColors = sku.colors.join("/");
+            sku.size = size;
+            sku.colors = completedColors;           
         })
 
         const productDetails = {
             name: product.name,
-            gender: product.gender,
-            brand: product.brand
-        };
+            brand: product.brand,
+            gender: product.gender
+        }
 
-        req.productDetails = productDetails;
         next();
 
     } catch (err) {
         res.status(500).json({ success: false, error: err.message });
     }
 
+
 };
-
-

@@ -6,14 +6,16 @@ export const generateSlug = (name, gender)=>{
 
 // Inside your generation utility
 export const generateSkuCode = (sku) => {
+
     const brand = sku.brand.substring(0, 3).toUpperCase();
     const name = sku.name.replace(/\s+/g, '').substring(0, 5).toUpperCase();
-    const color = sku.color.substring(0, 3).toUpperCase();
+    const color = sku.colors.join("/").toUpperCase();
     const gender = sku.gender.substring(0, 1).toUpperCase(); // M, W, K
     const size = sku.size.primaryValue.toString().replace('.', ''); 
 
     return `${brand}-${name}-${color}-${gender}-${size}`;
 };
+
 
 /* 
 Alphanumeric Only: Avoid special characters like @, #, or $. Use hyphens - as separators.

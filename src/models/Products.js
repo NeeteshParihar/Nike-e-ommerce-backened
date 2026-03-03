@@ -3,8 +3,9 @@ import mongoose from "mongoose";
 // make the color_style schema 
 
 const colorStyleSchema = new mongoose.Schema({
-    colorName: { type: String, required: true },
-    hexCode: { type: String, required: true },
+    colors: { type: [String], required: true},
+    primaryColor: { type: String, required: true },
+    hexCode: { type: String, required: true }, // primaryColorHexCode
     group: { type: String, required: true },
     primaryImage: {
         type: String, default: ""
